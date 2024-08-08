@@ -2,30 +2,21 @@ const Payment = require("../models/payment.model");
 const paypal = require("../../paypal-config");
 const Response = require("express").response;
 
-const ResPonseType = typeof Response;
-
 module.exports = {
   createPayment: async (req, res) => {
     const items = [
       {
         name: "Product1", //product name
         sku: "001", //unique identifier for product (you can use _id from database)
-        price: "1", //price
+        price: "10", //price
         currency: "USD", //currency
         quantity: 1, //quantity
-      },
-      {
-        name: "Product1",
-        sku: "001",
-        price: "1",
-        currency: "USD",
-        quantity: 1,
-      },
+      }
     ];
 
     const amount = {
       currency: "USD", //currency
-      total: "2", //total amount
+      total: "10", //total amount
     };
 
     // Creating a payment data object
