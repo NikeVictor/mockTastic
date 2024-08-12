@@ -27,8 +27,8 @@ module.exports = {
         payment_method: "paypal",
       },
       redirect_urls: {
-        return_url: "http://localhost:3000/success", // if sucessfull return url
-        cancel_url: "http://localhost:3000/cancel", // if canceled return url
+        return_url: "http://localhost:5173/success", // if sucessfull return url
+        cancel_url: "http://localhost:5173/cancel", // if canceled return url
       },
       transactions: [
         {
@@ -56,59 +56,42 @@ module.exports = {
   },
 
   success: async (req, res) => {
-    const payerId = req.query.PayerID;
-    const paymentId = req.query.paymentId;
-
+    const payerId = req.body.payerId;
+    const paymentId = req.body.paymentId;
     const execute_payment_json = {
-      payer_id: payerId,
-      transactions: [
-        {
-          amount: {
-            currency: "USD",
-            total: "10.00", // Amount should match the amount used in create-payment
-          },
-        },
-      ],
+      payer_id: payerId
     };
-
-    paypal.payment.execute(
-      paymentId,
-      execute_payment_json,
-      async (error, payment) => {
-        if (error) {
-          console.error(error);
-          res.status(500).send(error);
-        } else {
+  
+    paypal.payment.execute(paymentId, execute_payment_json, async (error, payment) => {
+      if (error) {
+        console.error("PayPal Execution Error:", error.response);
+        return res.status(500).send("Error executing payment: " + error.message);
+      } else {
+        try {
+          const transaction = payment.transactions[0];
+          const { total: amount, currency } = transaction.amount;
+          const status = payment.state;
+          const description = transaction.description;
+          const customerEmail = payment.payer.payer_info.email;
+  
           // Save payment details to MongoDB using Mongoose
-          try {
-            const {
-              amount,
-              currency,
-              state: status,
-              description,
-            } = payment.transactions[0];
-            const customerEmail = payment.payer.payer_info.email;
-
-            await Payment.create({
-              payment_id: paymentId,
-              payer_id: payerId,
-              amount: parseFloat(amount.total),
-              currency: currency,
-              status: status,
-              description: description,
-              customer_email: customerEmail,
-            });
-
-            res.send("Payment successful and saved");
-          } catch (dbError) {
-            console.error("Database insertion error:", dbError);
-            res
-              .status(500)
-              .send("Payment processed but failed to save in database");
-          }
+          await Payment.create({
+            payment_id: paymentId,
+            payer_id: payerId,
+            amount: parseFloat(amount),
+            currency: currency,
+            status: status,
+            description: description,
+            customer_email: customerEmail,
+          });
+  
+          res.send("Payment successful and saved");
+        } catch (dbError) {
+          console.error("Database Insertion Error:", dbError);
+          res.status(500).send("Payment processed but failed to save in database");
         }
       }
-    );
+    });
   },
 
   cancel: async (req, res) => {
