@@ -27,8 +27,8 @@ module.exports = {
         payment_method: "paypal",
       },
       redirect_urls: {
-        return_url: "http://localhost:5173/success", // if sucessfull return url
-        cancel_url: "http://localhost:5173/cancel", // if canceled return url
+        return_url: "https://mocktastic.onrender.com/success", // if sucessfull return url
+        cancel_url: "https://mocktastic.onrender.com/cancel", // if canceled return url
       },
       transactions: [
         {
